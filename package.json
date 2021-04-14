@@ -1,0 +1,16 @@
+{
+  "name": "thetaboard_smart_contracts",
+  "version": "1.0.0",
+  "description": "Smart Contracts for theta board",
+  "main": "index.js",
+  "scripts": {
+    "test": "node $NODE_DEBUG_OPTION ./node_modules/.bin/truffle test test/addressName.js",
+    "deploy": "truffle migrate --reset --network $NETWORK"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "truffle": "^5.3.1"
+  },
+  "devDependencies": {}
+}
