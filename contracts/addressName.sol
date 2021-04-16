@@ -11,6 +11,7 @@ contract addressName {
     struct offer {
         uint offerAmount;
         address payable walletMakingOffer;
+        uint offersMadeIndex;
     }
 
     struct nameOwner {
@@ -20,9 +21,10 @@ contract addressName {
 
     mapping(string => nameOwner) public nameToAddress;
     mapping(address => string[]) public addressToNames;
+    mapping(address => uint[]) public offersMade;
 
     mapping(string => mapping(uint => offer)) public offersForName;
-    mapping(string => uint) private maxOfferIds;
+    mapping(string => uint) public maxOfferIds;
 
     event offerMade(uint offerId);
 
@@ -52,9 +54,10 @@ contract addressName {
     function makeOffer(string calldata name) payable external {
         // make sure the name is used
         require(nameToAddress[name].ownerAddr != address(0), "This name is not currently used");
-        require(msg.value > 1 ether, "Offer should be of at least 1 tfuel ");
-        offer memory newOffer = offer(msg.value, payable(msg.sender));
+        require(msg.value >= 1 ether, "Offer should be of at least 1 tfuel ");
         uint offerId = maxOfferIds[name] + 1;
+        offersMade[msg.sender].push(offerId);
+        offer memory newOffer = offer(msg.value, payable(msg.sender), offersMade[msg.sender].length - 1);
         offersForName[name][offerId] = newOffer;
         maxOfferIds[name] = offerId;
         emit offerMade(offerId);
@@ -66,6 +69,17 @@ contract addressName {
         require(currentOffer.offerAmount != 0, "Offer doesn't exists");
         require(currentOffer.walletMakingOffer == msg.sender, "Only owner of offer can cancel it");
         currentOffer.walletMakingOffer.transfer(currentOffer.offerAmount);
+        delete (offersMade[currentOffer.walletMakingOffer][currentOffer.offersMadeIndex]);
+        delete (offersForName[name][offerId]);
+    }
+
+    function rejectOffer(string calldata name, uint offerId) external {
+        offer memory currentOffer = offersForName[name][offerId];
+        // make sure offer exists, and was done by the wallet calling this function
+        require(currentOffer.offerAmount != 0, "Offer doesn't exists");
+        require(nameToAddress[name].ownerAddr == msg.sender, "Only domain owner can reject it");
+        currentOffer.walletMakingOffer.transfer(currentOffer.offerAmount);
+        delete (offersMade[currentOffer.walletMakingOffer][currentOffer.offersMadeIndex]);
         delete (offersForName[name][offerId]);
     }
 
@@ -89,7 +103,7 @@ contract addressName {
         owner.transfer(transferToContractOwner);
 
         // delete offer
+        delete (offersMade[currentOffer.walletMakingOffer][currentOffer.offersMadeIndex]);
         delete (offersForName[name][offerId]);
-
     }
 }

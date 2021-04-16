@@ -4,12 +4,12 @@ const toWei = web3.utils.toWei;
 const fromWei = web3.utils.fromWei;
 const approxeq = (v1, v2, epsilon = 0.01) => Math.abs(v1 - v2) <= epsilon;
 
+const null_wallet = '0x0000000000000000000000000000000000000000';
+
 const originalTfuelPrice = '5';
 const newTfuelPrice = '0.0005';
 const my_wallet_name = "momo";
-
 const offerAmount = toWei("2");
-const offerIdWillBe = 1;
 
 
 contract("addressName test", async accounts => {
@@ -94,7 +94,7 @@ contract("addressName test", async accounts => {
             const msg = await instance.makeOffer(my_wallet_name, {from: accounts[2], value: offerAmount});
             const offerId = msg.receipt.logs[0].args.offerId;
             const offer = await instance.offersForName.call(my_wallet_name, offerId)
-            assert.equal(offerId, offerIdWillBe);
+            assert.equal(offerId, 1);
             assert.equal(offer[0], offerAmount);
             assert.equal(offer[1], accounts[2]);
         } catch (e) {
@@ -102,7 +102,7 @@ contract("addressName test", async accounts => {
         }
     });
 
-    it("should not allow >1 offers", async () => {
+    it("should not allow price <1 offers", async () => {
         try {
             const offerAmount = toWei("0.5")
             const instance = await addressName.deployed();
@@ -127,7 +127,7 @@ contract("addressName test", async accounts => {
         try {
             const instance = await addressName.deployed();
             const balance = fromWei(await web3.eth.getBalance(accounts[2]));
-            await instance.cancelOffer(my_wallet_name, offerIdWillBe, {from: accounts[2]});
+            await instance.cancelOffer(my_wallet_name, 1, {from: accounts[2]});
             const newBalance = fromWei(await web3.eth.getBalance(accounts[2]));
             assert.equal(approxeq(newBalance - balance, offerAmount), true);
         } catch (e) {
@@ -138,7 +138,7 @@ contract("addressName test", async accounts => {
     it("should not be able to cancel offer if not exists", async () => {
         try {
             const instance = await addressName.deployed();
-            await instance.cancelOffer(my_wallet_name, offerIdWillBe, {from: accounts[2]});
+            await instance.cancelOffer(my_wallet_name, 1, {from: accounts[2]});
             assert.equal(true, false);
         } catch (e) {
             assert.equal(true, true)
@@ -149,12 +149,38 @@ contract("addressName test", async accounts => {
         try {
             const instance = await addressName.deployed();
             const msg = await instance.makeOffer(my_wallet_name, {from: accounts[2], value: offerAmount});
-            await instance.cancelOffer(my_wallet_name, offerIdWillBe + 1, {from: accounts[0]});
+            const offer_id = msg.logs[0].args.offerId;
+            await instance.cancelOffer(my_wallet_name, offer_id, {from: accounts[0]});
             assert.equal(true, false);
         } catch (e) {
             assert.equal(true, true)
         }
     });
+
+    it("should reject offer", async () => {
+        try {
+            const instance = await addressName.deployed();
+            const msg = await instance.makeOffer(my_wallet_name, {from: accounts[2], value: offerAmount});
+            const offer_id = msg.logs[0].args.offerId;
+            await instance.rejectOffer(my_wallet_name, offer_id, {from: accounts[1]});
+            const offer = await instance.offersForName(my_wallet_name, offer_id);
+            assert.equal(offer.walletMakingOffer, null_wallet);
+        } catch (e) {
+            assert.equal(true, false)
+        }
+    })
+
+    it("should not reject offer if not owner of domain", async () => {
+        try {
+            const instance = await addressName.deployed();
+            const msg = await instance.makeOffer(my_wallet_name, {from: accounts[2], value: offerAmount});
+            const offer_id = msg.logs[0].args.offerId;
+            await instance.rejectOffer(my_wallet_name, offer_id, {from: accounts[2]});
+            assert.equal(true, false);
+        } catch (e) {
+            assert.equal(true, true)
+        }
+    })
 
     it("should be able to accept offer", async () => {
         try {
@@ -186,7 +212,7 @@ contract("addressName test", async accounts => {
             assert.equal(approxeq(balance_before_acquirer - balance_after_acquirer, fromWei(offerAmount)), true);
 
             assert.equal(offer.offerAmount, 0);
-            assert.equal(offer.walletMakingOffer, '0x0000000000000000000000000000000000000000');
+            assert.equal(offer.walletMakingOffer, null_wallet);
         } catch (e) {
             console.log(e);
             assert.equal(true, false);
