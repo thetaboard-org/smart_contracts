@@ -9,9 +9,10 @@ contract addressName {
     uint public tfuelPrice = 5 ether;
 
     struct offer {
-        uint offerAmount;
-        address payable walletMakingOffer;
-        uint offersMadeIndex;
+        uint offerAmount; // offer amount in tfuel
+        address payable walletMakingOffer; // wallet making offer
+        uint offersMadeNameIndex; // used to get Index of offersMadeName
+        uint offersMadeNameIdIndex; // used to get Index of offersMadeNameId
     }
 
     struct nameOwner {
@@ -19,11 +20,13 @@ contract addressName {
         uint indexInAddressToNames;
     }
 
-    mapping(string => nameOwner) public nameToAddress;
-    mapping(address => string[]) public addressToNames;
-    mapping(address => uint[]) public offersMade;
+    mapping(string => nameOwner) public nameToAddress; // for a domain get the owner
+    mapping(address => string[]) public addressToNames; // for an owner get all the domains
 
-    mapping(string => mapping(uint => offer)) public offersForName;
+    mapping(address => string[]) public offersMadeName; // get offers made by a wallet. Useful to call offersMadeNameId
+    mapping(address => mapping(string => uint[])) public offersMadeNameId; // get offers made by a wallet. Used with offersForName to get all the offers for an address
+
+    mapping(string => mapping(uint => offer)) public offersForName; // get all the offers for a domain
     mapping(string => uint) public maxOfferIds;
 
     event offerMade(uint offerId);
@@ -56,8 +59,12 @@ contract addressName {
         require(nameToAddress[name].ownerAddr != address(0), "This name is not currently used");
         require(msg.value >= 1 ether, "Offer should be of at least 1 tfuel ");
         uint offerId = maxOfferIds[name] + 1;
-        offersMade[msg.sender].push(offerId);
-        offer memory newOffer = offer(msg.value, payable(msg.sender), offersMade[msg.sender].length - 1);
+        offersMadeName[msg.sender].push(name);
+        offersMadeNameId[msg.sender][name].push(offerId);
+        offer memory newOffer = offer(msg.value,
+            payable(msg.sender),
+            offersMadeName[msg.sender].length - 1,
+            offersMadeNameId[msg.sender][name].length - 1);
         offersForName[name][offerId] = newOffer;
         maxOfferIds[name] = offerId;
         emit offerMade(offerId);
@@ -69,7 +76,8 @@ contract addressName {
         require(currentOffer.offerAmount != 0, "Offer doesn't exists");
         require(currentOffer.walletMakingOffer == msg.sender, "Only owner of offer can cancel it");
         currentOffer.walletMakingOffer.transfer(currentOffer.offerAmount);
-        delete (offersMade[currentOffer.walletMakingOffer][currentOffer.offersMadeIndex]);
+        delete (offersMadeName[currentOffer.walletMakingOffer][currentOffer.offersMadeNameIndex]);
+        delete (offersMadeNameId[currentOffer.walletMakingOffer][name][currentOffer.offersMadeNameIdIndex]);
         delete (offersForName[name][offerId]);
     }
 
@@ -79,7 +87,8 @@ contract addressName {
         require(currentOffer.offerAmount != 0, "Offer doesn't exists");
         require(nameToAddress[name].ownerAddr == msg.sender, "Only domain owner can reject it");
         currentOffer.walletMakingOffer.transfer(currentOffer.offerAmount);
-        delete (offersMade[currentOffer.walletMakingOffer][currentOffer.offersMadeIndex]);
+        delete (offersMadeName[currentOffer.walletMakingOffer][currentOffer.offersMadeNameIndex]);
+        delete (offersMadeNameId[currentOffer.walletMakingOffer][name][currentOffer.offersMadeNameIdIndex]);
         delete (offersForName[name][offerId]);
     }
 
@@ -98,12 +107,12 @@ contract addressName {
         // make payments
         uint transferToSender = currentOffer.offerAmount / 10 * 9;
         uint transferToContractOwner = currentOffer.offerAmount / 10;
-        require(transferToSender + transferToContractOwner == currentOffer.offerAmount, "bug!");
         payable(msg.sender).transfer(transferToSender);
         owner.transfer(transferToContractOwner);
 
         // delete offer
-        delete (offersMade[currentOffer.walletMakingOffer][currentOffer.offersMadeIndex]);
+        delete (offersMadeName[currentOffer.walletMakingOffer][currentOffer.offersMadeNameIndex]);
+        delete (offersMadeNameId[currentOffer.walletMakingOffer][name][currentOffer.offersMadeNameIdIndex]);
         delete (offersForName[name][offerId]);
     }
 }
