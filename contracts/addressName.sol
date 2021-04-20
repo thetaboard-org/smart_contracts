@@ -13,6 +13,7 @@ contract addressName {
         address payable walletMakingOffer; // wallet making offer
         uint offersMadeNameIndex; // used to get Index of offersMadeName
         uint offersMadeNameIdIndex; // used to get Index of offersMadeNameId
+        uint offerId;
     }
 
     struct nameOwner {
@@ -72,7 +73,8 @@ contract addressName {
         offer memory newOffer = offer(msg.value,
             payable(msg.sender),
             offersMadeName[msg.sender].length - 1,
-            offersMadeNameId[msg.sender][name].length - 1);
+            offersMadeNameId[msg.sender][name].length - 1,
+            offerId);
         offersForName[name][offerId] = newOffer;
         maxOfferIds[name] = offerId;
         emit offerMade(offerId);
