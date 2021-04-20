@@ -91,7 +91,7 @@ contract("addressName test", async accounts => {
     it("should make new offer", async () => {
         try {
             const instance = await addressName.deployed();
-            const msg = await instance.makeOffer(my_wallet_name, {from: accounts[2], value: offerAmount});
+            const msg = await instance.makeOffer(my_wallet_name, {from: accounts[3], value: offerAmount});
             const offerId = msg.receipt.logs[0].args.offerId;
             const offer = await instance.offersForName.call(my_wallet_name, offerId)
             assert.equal(offerId, 1);

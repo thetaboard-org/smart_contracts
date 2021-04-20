@@ -39,6 +39,14 @@ contract addressName {
         return addressToNames[walletAddr];
     }
 
+    function getOffersMadeName(address payable walletAddr) external view returns (string[] memory){
+        return offersMadeName[walletAddr];
+    }
+
+    function getOffersMadeNameId(address payable walletAddr, string memory name) external view returns (uint[] memory){
+        return offersMadeNameId[walletAddr][name];
+    }
+
     function setTfuelPrice(uint newPrice) external {
         require(msg.sender == owner);
         tfuelPrice = newPrice;
