@@ -11,18 +11,13 @@ interface AggregatorInterface {
 }
 
 
-// StablePriceOracle sets a price in USD, based on an oracle.
+// StablePriceOracle sets a price in tfuelWei per seconds based on domain length
 contract StablePriceOracle is Ownable, PriceOracle {
     using SafeMath for *;
     using StringUtils for *;
 
-    // Rent in base price units by length. Element 0 is for 1-length names, and so on.
+    // Rent in base price per day by length. Element 0 is for 1-length names, and so on.
     uint[] public rentPrices;
-
-    // Oracle address
-    AggregatorInterface public usdOracle;
-
-    event OracleChanged(address oracle);
 
     event RentPriceChanged(uint[] prices);
 
@@ -47,7 +42,7 @@ contract StablePriceOracle is Ownable, PriceOracle {
      * @param _rentPrices The price array. Each element corresponds to a specific
      *                    name length; names longer than the length of the array
      *                    default to the price of the last element. Values are
-     *                    in tfuel per days.
+     *                    in tfuelWei per seconds.
      */
     function setPrices(uint[] memory _rentPrices) public onlyOwner {
         rentPrices = _rentPrices;

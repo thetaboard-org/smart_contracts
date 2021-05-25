@@ -12,7 +12,7 @@ import "@ensdomains/resolver/contracts/Resolver.sol";
 contract ETHRegistrarController is Ownable {
     using StringUtils for *;
 
-    uint constant public MIN_REGISTRATION_DURATION = 28 days;
+    uint constant public MIN_REGISTRATION_DURATION = 365 days;
 
     bytes4 constant private INTERFACE_META_ID = bytes4(keccak256("supportsInterface(bytes4)"));
     bytes4 constant private COMMITMENT_CONTROLLER_ID = bytes4(
