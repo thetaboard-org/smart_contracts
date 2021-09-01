@@ -28,13 +28,13 @@ contract StablePriceOracle is Ownable, PriceOracle {
         setPrices(_rentPrices);
     }
 
-    function price(string calldata name, uint expires, uint duration) external view returns(uint) {
+    function price(string calldata name) external view returns (uint) {
         uint len = name.strlen();
-        if(len > rentPrices.length) {
+        if (len > rentPrices.length) {
             len = rentPrices.length;
         }
         require(len > 0);
-        return rentPrices[len - 1].mul(duration);
+        return rentPrices[len - 1];
     }
 
     /**

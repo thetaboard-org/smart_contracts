@@ -11,7 +11,6 @@ contract TNSRegistry is ENS {
     struct Record {
         address owner;
         address resolver;
-        uint64 ttl;
     }
 
     mapping (bytes32 => Record) records;
@@ -36,11 +35,10 @@ contract TNSRegistry is ENS {
      * @param node The node to update.
      * @param owner The address of the new owner.
      * @param resolver The address of the resolver.
-     * @param ttl The TTL in seconds.
      */
-    function setRecord(bytes32 node, address owner, address resolver, uint64 ttl) external virtual override {
+    function setRecord(bytes32 node, address owner, address resolver) external virtual override {
         setOwner(node, owner);
-        _setResolverAndTTL(node, resolver, ttl);
+        _setResolver(node, resolver);
     }
 
     /**
@@ -49,11 +47,10 @@ contract TNSRegistry is ENS {
      * @param label The hash of the label specifying the subnode.
      * @param owner The address of the new owner.
      * @param resolver The address of the resolver.
-     * @param ttl The TTL in seconds.
      */
-    function setSubnodeRecord(bytes32 node, bytes32 label, address owner, address resolver, uint64 ttl) external virtual override {
+    function setSubnodeRecord(bytes32 node, bytes32 label, address owner, address resolver) external virtual override {
         bytes32 subnode = setSubnodeOwner(node, label, owner);
-        _setResolverAndTTL(subnode, resolver, ttl);
+        _setResolver(subnode, resolver);
     }
 
     /**
@@ -87,16 +84,6 @@ contract TNSRegistry is ENS {
     function setResolver(bytes32 node, address resolver) public virtual override authorised(node) {
         emit NewResolver(node, resolver);
         records[node].resolver = resolver;
-    }
-
-    /**
-     * @dev Sets the TTL for the specified node.
-     * @param node The node to update.
-     * @param ttl The TTL in seconds.
-     */
-    function setTTL(bytes32 node, uint64 ttl) public virtual override authorised(node) {
-        emit NewTTL(node, ttl);
-        records[node].ttl = ttl;
     }
 
     /**
@@ -134,15 +121,6 @@ contract TNSRegistry is ENS {
     }
 
     /**
-     * @dev Returns the TTL of a node, and any records associated with it.
-     * @param node The specified node.
-     * @return ttl of the node.
-     */
-    function ttl(bytes32 node) public virtual override view returns (uint64) {
-        return records[node].ttl;
-    }
-
-    /**
      * @dev Returns whether a record has been imported to the registry.
      * @param node The specified node.
      * @return Bool if record exists
@@ -165,15 +143,11 @@ contract TNSRegistry is ENS {
         records[node].owner = owner;
     }
 
-    function _setResolverAndTTL(bytes32 node, address resolver, uint64 ttl) internal {
-        if(resolver != records[node].resolver) {
+    function _setResolver(bytes32 node, address resolver) internal {
+        if (resolver != records[node].resolver) {
             records[node].resolver = resolver;
             emit NewResolver(node, resolver);
         }
 
-        if(ttl != records[node].ttl) {
-            records[node].ttl = ttl;
-            emit NewTTL(node, ttl);
-        }
     }
 }
