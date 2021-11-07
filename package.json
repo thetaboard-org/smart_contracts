@@ -1,27 +1,27 @@
 {
-  "name": "thetaboard_smart_contracts",
+  "name": "nifties",
   "version": "1.0.0",
-  "description": "Smart Contracts for thetaboard",
-  "main": "index.js",
+  "description": "",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
   "scripts": {
-    "test": "node $NODE_DEBUG_OPTION ./node_modules/.bin/truffle test test/test_theta_registrar.js",
+    "test": "node $NODE_DEBUG_OPTION ./node_modules/.bin/truffle test test/ThetaboardNFT.js",
     "deploy": "node $NODE_DEBUG_OPTION ./node_modules/.bin/truffle migrate"
   },
   "author": "",
   "license": "ISC",
+  "devDependencies": {
+    "@openzeppelin/contracts": "^4.3.1",
+    "truffle-plugin-verify": "^0.5.15"
+  },
   "dependencies": {
-    "@ensdomains/buffer": "0.0.10",
-    "@ensdomains/dnsregistrar": "^0.3.5",
-    "@ensdomains/dnssec-oracle": "^0.2.0",
-    "@ensdomains/ens": "^0.4.0",
-    "@ensdomains/ethregistrar": "2.0.4",
-    "@ensdomains/resolver": "0.3.0",
-    "@ensdomains/subdomain-registrar": "^0.2.0",
-    "@ensdomains/test-utils": "^1.3.0",
-    "@openzeppelin/contracts": "^3.4.0-solc-0.7",
-    "@thetalabs/theta-js": "^0.0.53",
-    "@thetalabs/theta-wallet-connect": "^0.0.18",
-    "ethers": "^5.1.4",
-    "truffle": "^5.3.1"
+    "@thetalabs/theta-js": "^0.0.56",
+    "@truffle/hdwallet-provider": "^1.5.0",
+    "ethereumjs-tx": "^1.3.5",
+    "node-fetch": "^2.6.1",
+    "truffle": "^5.4.13",
+    "web3": "^1.5.0"
   }
 }

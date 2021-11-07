@@ -4,6 +4,9 @@
 /dist/
 /tmp/
 
+# config
+/secrets
+
 # dependencies
 /bower_components/
 /node_modules/
@@ -59,7 +62,7 @@
 # .idea/compiler.xml
 # .idea/jarRepositories.xml
 # .idea/modules.xml
-# .idea/*.iml
+ .idea/
 # .idea/modules
  *.iml
 # *.ipr
