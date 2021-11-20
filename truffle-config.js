@@ -20,7 +20,7 @@
 
 const secrets = require('./secrets/secrets.json');
 const HDWalletProvider = require('@truffle/hdwallet-provider');
-const privateKey = secrets.privateKey;
+const privateKey = secrets.private_key;
 
 module.exports = {
   /**
@@ -51,7 +51,7 @@ module.exports = {
         // Replace the private key below with the private key of the deployer wallet.
         // Make sure the deployer wallet has a sufficient amount of TFuel, e.g. 100 TFuel
         return new HDWalletProvider({
-          privateKeys: [secrets.testnet.private_key],
+          privateKeys: [privateKey],
           providerOrUrl: 'https://eth-rpc-api-testnet.thetatoken.org/rpc',
         });
       },
@@ -69,7 +69,7 @@ module.exports = {
         // Replace the private key below with the private key of the deployer wallet.
         // Make sure the deployer wallet has a sufficient amount of TFuel, e.g. 100 TFuel
         return new HDWalletProvider({
-          privateKeys: [secrets.testnet.private_key],
+          privateKeys: [privateKey],
           providerOrUrl: 'https://eth-rpc-api.thetatoken.org/rpc',
         });
       },

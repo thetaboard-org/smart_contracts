@@ -25,7 +25,7 @@ contract ThetaboardDirectSellNft is Ownable {
     * _maxDate and _maxMint are optionals ( can be passed ar 0 to be ignored)
     * _artistSplit percentage of the sells will be send to _artistWallet
     */
-    function newSell(address _nftAddress, uint256 _nftPrice, uint256 _maxDate, uint256 _maxMint, address _artistWallet, uint8 _artistSplit) public onlyOwner {
+    function newSell(address _nftAddress, uint256 _nftPrice, uint256 _maxDate, uint256 _maxMint, address _artistWallet, uint8 _artistSplit) public {
         require(_nftAddress != address(0) && _nftAddress != address(this));
         require(NFTsSell[_nftAddress].price == 0, "contract already exists for this nft");
         require(_nftPrice > 0, "A price is required");

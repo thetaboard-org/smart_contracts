@@ -112,57 +112,18 @@ contract ThetaboardAuctionSellNft is Ownable {
         NFTsAuction[_nftAddress].countBidMade += 1;
     }
 
-
-    // used
-    function sort(bidStruct[] bidStructArray) private returns (bidStruct[] memory) {
-        for (uint i = 0; i < bidStructArray.length; i++) {
-            helper[i] = 0;
-            for (uint j = 0; j < i; j++) {
-                if (bidStructArray[i].bidValue < bidStructArray[j].bidValue) {
-                    if (helper[i] == 0) {
-                        helper[i] = helper[j];
-                    }
-                    helper[j] = helper[j] + 1;
-                }
-            }
-            if (helper[i] == 0) {
-                helper[i] = i + 1;
-            }
-        }
-        var lengthSortedArray = sortedArray.length;
-        for (uint i = 0; i < bidStructArray.length; i++) {
-            if (i < lengthSortedArray) continue;
-            sortedArray.push(bidStruct(msg.sender, 0));
-        }
-
-        /** Go over the bidStructArray and copy the items to sortedArray to the positions specified in
-         ** the helper mapping. At this point subtract the added 1, to get the real index */
-        for (uint i = 0; i < bidStructArray.length; i++) {
-            sortedArray[helper[i] - 1] = bidStructArray[i];
-        }
-        return sortedArray;
-    }
-
-    function concludeBid(address _nftAddress) public onlyOwner {
+    function concludeBid(address _nftAddress, uint[] memory orderToMint) public onlyOwner {
         require(NFTsAuction[_nftAddress].minBid != 0, "A contract should exists for this nft");
+        //Order to mint is passe by the client and is reponsable of the order to which the NFT are minted.require
+        // it should ensure that the higest bidder get NFT edition "1", second highest get "2", ...
+        require(NFTsAuction[_nftAddress].bidders.length == orderToMint.length);
 
         uint256 totalBid = 0;
-        bidStruct[] sortedBidStruct;
 
         for (uint i = 0; i < NFTsAuction[_nftAddress].bidders.length; i++) {
-            bidStruct currentBid = bidStruct({
-            bidder : NFTsAuction[_nftAddress].bidders[i],
-            bidValue : NFTsAuction[_nftAddress].bidsValue[i]
-            });
-            sortedBidStruct.push(currentBid);
-        }
-
-        sortedBidStruct = sort(sortedBidStruct);
-        // TODO: check if order is correct, biggest bidder should have the edition 1
-        for (uint i = 0; i < sortingBidStruct.length; i++) {
-            address bidder = sortingBidStruct[i].bidder;
+            address bidder = NFTsAuction[_nftAddress].bidders[orderToMint[i]];
             ThetaboardNFT(_nftAddress).mint(bidder);
-            totalBid += sortedBidStruct[i].bidsValue[i];
+            totalBid += NFTsAuction[_nftAddress].bidsValue[orderToMint[i]];
         }
 
         uint artistValue = totalBid / 100 * NFTsAuction[_nftAddress].artistSplit;
