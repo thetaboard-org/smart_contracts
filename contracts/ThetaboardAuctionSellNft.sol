@@ -21,6 +21,9 @@ contract ThetaboardAuctionSellNft is Ownable {
 
         address[] bidders;
         uint256[] bidsValue;
+
+        bool concluded;
+        address auctionOwner;
     }
 
     mapping(address => nftAuction) NFTsAuction;
@@ -35,7 +38,7 @@ contract ThetaboardAuctionSellNft is Ownable {
     mapping(uint => uint) helper;
 
 
-    function newAuction(address _nftAddress, uint256 _minBid, uint256 _maxDate, uint256 _maxMint, address _artistWallet, uint8 _artistSplit) public onlyOwner {
+    function newAuction(address _nftAddress, uint256 _minBid, uint256 _maxDate, uint256 _maxMint, address _artistWallet, uint8 _artistSplit) public {
         require(_nftAddress != address(0) && _nftAddress != address(this));
         require(NFTsAuction[_nftAddress].minBid == 0, "contract already exists for this nft");
         require(_minBid > 0, "A price is required");
@@ -52,7 +55,9 @@ contract ThetaboardAuctionSellNft is Ownable {
         artistWallet : _artistWallet,
         artistSplit : _artistSplit,
         bidders : bidders,
-        bidsValue : bidsValue
+        bidsValue : bidsValue,
+        concluded : false,
+        auctionOwner : msg.sender
         });
     }
 
@@ -63,7 +68,10 @@ contract ThetaboardAuctionSellNft is Ownable {
     function placeBid(address _nftAddress) public payable {
         require(_nftAddress != address(0) && _nftAddress != address(this));
         require(NFTsAuction[_nftAddress].minBid != 0, "A contract should exists for this nft");
-        require(msg.value > NFTsAuction[_nftAddress].minBid, "Bid Should be higher than minBid");
+        require(msg.value > NFTsAuction[_nftAddress].minBid, "Bid should be higher than minBid");
+        require(!NFTsAuction[_nftAddress].concluded, "Auction shouldn't be concluded");
+        require(NFTsAuction[_nftAddress].maxDate == 0 || NFTsAuction[_nftAddress].maxDate > block.timestamp,
+            "Can't bid after max date is passed");
         uint256 _bid = msg.value;
         address _bidder = msg.sender;
         if (NFTsAuction[_nftAddress].bidders.length < NFTsAuction[_nftAddress].maxMint) {
@@ -112,11 +120,22 @@ contract ThetaboardAuctionSellNft is Ownable {
         NFTsAuction[_nftAddress].countBidMade += 1;
     }
 
-    function concludeBid(address _nftAddress, uint[] memory orderToMint) public onlyOwner {
+    function concludeAuction(address _nftAddress, uint[] memory orderToMint) public {
         require(NFTsAuction[_nftAddress].minBid != 0, "A contract should exists for this nft");
-        //Order to mint is passe by the client and is reponsable of the order to which the NFT are minted.require
-        // it should ensure that the higest bidder get NFT edition "1", second highest get "2", ...
+        require(!NFTsAuction[_nftAddress].concluded, "Auction shouldn't be concluded");
+        require(NFTsAuction[_nftAddress].maxDate == 0 || NFTsAuction[_nftAddress].maxDate <= block.timestamp,
+            "Can't conclude before maxDate");
+        require(owner() == msg.sender || NFTsAuction[_nftAddress].auctionOwner == msg.sender,
+            "Only contract owner or auction owner can conclude auction");
+
+        //Order to mint is passe by the client and is responsible of the order to which the NFT are minted.require
+        // it should ensure that the highest bidder get NFT edition "1", second highest get "2", ...
         require(NFTsAuction[_nftAddress].bidders.length == orderToMint.length);
+        uint sum = 0;
+        for (uint i = 0; i < orderToMint.length; i++) {
+            sum += 2 ** orderToMint[i];
+        }
+        require(sum == 2 ** orderToMint.length - 1, "orderToMint should have all number once from 0 to length");
 
         uint256 totalBid = 0;
 
@@ -131,6 +150,8 @@ contract ThetaboardAuctionSellNft is Ownable {
 
         payable(NFTsAuction[_nftAddress].artistWallet).transfer(artistValue);
         payable(owner()).transfer(ownerValue);
+
+        NFTsAuction[_nftAddress].concluded = true;
     }
 
 
