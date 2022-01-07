@@ -126,7 +126,7 @@ contract("thetaboard marketplace NFT", async accounts => {
     });
 
 
-    it("Should cahnge sell fee", async function () {
+    it("Should hange sell fee", async function () {
         /* get contracts */
         const market = await thetaboard_marketplace.deployed()
 
