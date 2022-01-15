@@ -37,6 +37,10 @@ contract("thetaboard marketplace NFT", async accounts => {
         assert.equal(items.length, 2, "Two items should be on sale");
         assert.equal(items["0"].price, sellPrice, "Price should be the same a sell price");
 
+        // check it can get sell from nftContract + tokenId
+        const item = await market.getByNftContractTokenId(nftContractAddress,0);
+        assert.equal(item.itemId, 1, "Should get item from 'getByNftContractTokenId'");
+
         const seller1Items = await market.fetchSellingItemsForAddress(seller1);
         assert.equal(seller1Items.length, 1, "One item should be sold by seller 1")
     });
@@ -45,7 +49,6 @@ contract("thetaboard marketplace NFT", async accounts => {
         /* get contracts */
         const market = await thetaboard_marketplace.deployed()
         const nft = await thetaboard_nft.deployed();
-
 
         const salesFee = await market.getSalesFee();
         const sellerBeforeBuy = await web3.eth.getBalance(seller1);
@@ -69,6 +72,7 @@ contract("thetaboard marketplace NFT", async accounts => {
 
         const items = await market.fetchSellingItems();
         assert.equal(items.length, 1, "Should have only 1 item left in marketplace");
+
 
 
         const itemsBought = await market.fetchPurchasedItemsForAddress(buyer);

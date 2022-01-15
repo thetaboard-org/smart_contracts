@@ -38,6 +38,8 @@ contract ThetaboardMarketPlace is ReentrancyGuard {
 
     //    mapping that keeps all items ever placed on the marketplace
     mapping(uint256 => MarketItem) private idToMarketItem;
+    // mapping to get an item id from "nftcontract:tokenId"
+    mapping(string => uint256) private contractTokenToId;
 
     // Event called when a new Item is created
     event MarketItemCreated(
@@ -100,6 +102,10 @@ contract ThetaboardMarketPlace is ReentrancyGuard {
 
         _itemIds.increment();
         uint256 itemId = _itemIds.current();
+        string memory contractToken = string(abi.encodePacked(nftContract, tokenId));
+
+        contractTokenToId[contractToken] = itemId;
+
         idToMarketItem[itemId] = MarketItem(
             itemId,
             nftContract,
@@ -312,6 +318,13 @@ contract ThetaboardMarketPlace is ReentrancyGuard {
     }
 
     function getByMarketId(uint256 id) public view returns (MarketItem memory){
+        require(id <= _itemIds.current(), "id doesn't exist");
+        return idToMarketItem[id];
+    }
+
+    function getByNftContractTokenId(address nftContract, uint256 tokenId) public view returns (MarketItem memory){
+        string memory contractToken = string(abi.encodePacked(nftContract, tokenId));
+        uint256 id = contractTokenToId[contractToken];
         require(id <= _itemIds.current(), "id doesn't exist");
         return idToMarketItem[id];
     }
