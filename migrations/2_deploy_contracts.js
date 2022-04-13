@@ -7,7 +7,7 @@ const ThetaboardAuctionNft = artifacts.require("ThetaboardAuctionSellNft");
 
 
 module.exports = async function (deployer) {
-    // await deployer.deploy(ThetaboardNFT, "Thetaboard 2021 NFT", "TB", "https://nft.thetaboard.io/nft/2/");
+    await deployer.deploy(ThetaboardNFT, "Thetaboard 2021 NFT", "TB", "https://nft.thetaboard.io/nft/2/");
     // const thetaboardNftInstance = await ThetaboardNFT.deployed();
     // const thetaboardNftInstanceAddress = thetaboardNftInstance.address;
     // // //

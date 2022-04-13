@@ -25,7 +25,6 @@ contract("thetaboard marketplace NFT", async accounts => {
         const nft1 = await nft.mint(seller1);
         const nft2 = await nft.mint(seller2);
 
-
         /* put tokens for sale */
         await nft.approve(marketAddress, 0, {from: seller1});
         await market.createMarketItem(nftContractAddress, 0, sellPrice, "CategoryRandom", {from: seller1});
