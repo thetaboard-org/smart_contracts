@@ -44,6 +44,7 @@ contract ThetaboardOffer is ReentrancyGuard {
         address nftContract,
         uint256 tokenId,
         address payable offerer,
+        address payable offered,
         uint256 price
     );
 
@@ -71,6 +72,7 @@ contract ThetaboardOffer is ReentrancyGuard {
         address nftContract,
         uint256 tokenId,
         address payable offerer,
+        address payable offered,
         uint256 price
     );
 
@@ -95,7 +97,7 @@ contract ThetaboardOffer is ReentrancyGuard {
         require(listingIsActive == true, "Listing disabled");
         require(msg.value > 0, "Offer must be higher than 0");
         string memory contractToken = string(abi.encodePacked(nftContract, tokenId, msg.sender));
-        require(contractTokenAddressToId[contractToken] == 0, "Wallet already made an offer for this item");
+        require(contractTokenAddressToId[contractToken] < 1, string(abi.encodePacked(contractTokenAddressToId[contractToken])));
 
         _itemIds.increment();
         uint256 itemId = _itemIds.current();
@@ -116,15 +118,33 @@ contract ThetaboardOffer is ReentrancyGuard {
             nftContract,
             tokenId,
             payable(msg.sender),
+            payable(address(0)),
             msg.value
         );
     }
 
-    event test(
-        address sender,
-        address owner,
-        uint tokenId
-    );
+    function changeOffer(uint256 itemId) public nonReentrant payable {
+        require(listingIsActive == true, "Listing disabled");
+        require(msg.value > 0, "Offer must be higher than 0");
+        // get sell info
+        uint256 price = idToOfferItem[itemId].price;
+        address payable offerer = idToOfferItem[itemId].offerer;
+
+        require(offerer == msg.sender, "You must be offerer to change the offer");
+
+
+        idToOfferItem[itemId].price =  msg.value;
+        offerer.transfer(price);
+
+        emit OfferCreated(
+            itemId,
+            idToOfferItem[itemId].nftContract,
+            idToOfferItem[itemId].tokenId,
+            offerer,
+            payable(address(0)),
+            msg.value
+        );
+    }
 
     function acceptOffer(uint256 itemId, address creator, uint256 creatorSplit) public nonReentrant
     {
@@ -136,7 +156,6 @@ contract ThetaboardOffer is ReentrancyGuard {
         address nftContract = idToOfferItem[itemId].nftContract;
         IERC721 nft721 = IERC721(nftContract);
         address payable offerer = idToOfferItem[itemId].offerer;
-        emit test(msg.sender, nft721.ownerOf(tokenId), tokenId);
         require(nft721.ownerOf(tokenId) == msg.sender, "You must be token owner to accept the offer");
 
         // transfer token
@@ -145,6 +164,8 @@ contract ThetaboardOffer is ReentrancyGuard {
         // set in OfferItem
         idToOfferItem[itemId].isSold = true;
         idToOfferItem[itemId].offered = payable(msg.sender);
+        delete contractTokenAddressToId[string(abi.encodePacked(nftContract, tokenId, offerer))];
+
         _itemsSold.increment();
 
         // Calculate Payouts
@@ -162,7 +183,6 @@ contract ThetaboardOffer is ReentrancyGuard {
         // Payout to user and thetaboard
         payable(msg.sender).transfer(userPayout);
         owner.transfer(ownerPayout);
-
 
         emit OfferAccepted(
             itemId,
@@ -197,6 +217,8 @@ contract ThetaboardOffer is ReentrancyGuard {
         // set in OfferItem
         idToOfferItem[itemId].isSold = true;
         offerer.transfer(price);
+        string memory contractToken = string(abi.encodePacked(nftContract, tokenId, offerer));
+        delete contractTokenAddressToId[contractToken];
         _itemsSold.increment();
 
         // event
@@ -219,11 +241,13 @@ contract ThetaboardOffer is ReentrancyGuard {
         address nftContract = idToOfferItem[itemId].nftContract;
         address payable offerer = idToOfferItem[itemId].offerer;
 
-        require(offerer == msg.sender || msg.sender == owner, "You must be token owner to deny the offer");
+        require(offerer == msg.sender || msg.sender == owner, "You must be offerer to cancel the offer");
 
         // set in OfferItem
         idToOfferItem[itemId].isSold = true;
         offerer.transfer(price);
+        string memory contractToken = string(abi.encodePacked(nftContract, tokenId, offerer));
+        delete contractTokenAddressToId[contractToken];
         _itemsSold.increment();
 
         // event
@@ -232,6 +256,7 @@ contract ThetaboardOffer is ReentrancyGuard {
             idToOfferItem[itemId].nftContract,
             idToOfferItem[itemId].tokenId,
             idToOfferItem[itemId].offerer,
+            payable(address(0)),
             price
         );
     }
@@ -243,7 +268,7 @@ contract ThetaboardOffer is ReentrancyGuard {
 
         OfferItem[] memory OfferItems = new OfferItem[](unsoldItemCount);
         for (uint256 i = 0; i < itemCount; i++) {
-            if (idToOfferItem[i + 1].offered == address(0)) {
+            if (idToOfferItem[i + 1].isSold == false) {
                 uint256 currentId = idToOfferItem[i + 1].itemId;
                 OfferItem storage currentItem = idToOfferItem[currentId];
                 OfferItems[currentIndex] = currentItem;
@@ -259,7 +284,7 @@ contract ThetaboardOffer is ReentrancyGuard {
 
         OfferItem[] memory OfferItems = new OfferItem[](itemCount);
         for (uint256 i = start; i < end; i++) {
-            if (idToOfferItem[i + 1].offered == address(0)) {
+            if (idToOfferItem[i + 1].isSold == false) {
                 uint256 currentId = idToOfferItem[i + 1].itemId;
                 OfferItem storage currentItem = idToOfferItem[currentId];
                 OfferItems[currentIndex] = currentItem;
@@ -292,7 +317,7 @@ contract ThetaboardOffer is ReentrancyGuard {
         return OfferItems;
     }
 
-    function getByMarketId(uint256 id) public view returns (OfferItem memory){
+    function getByItemId(uint256 id) public view returns (OfferItem memory){
         require(id <= _itemIds.current(), "id doesn't exist");
         return idToOfferItem[id];
     }

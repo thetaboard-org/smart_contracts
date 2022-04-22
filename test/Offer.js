@@ -45,6 +45,7 @@ contract("thetaboard offer NFT", async accounts => {
         /* mint nft */
         const nft1 = await nft.mint(seller1);
         const nft2 = await nft.mint(seller2);
+        const nft3 = await nft.mint(seller2);
 
         /* Make an offer */
         await offer.createNewOffer(nftContractAddress, 0, {from: offerer, value: offerPrice});
@@ -129,16 +130,13 @@ contract("thetaboard offer NFT", async accounts => {
         const offer = await thetaboard_offer.deployed()
         const offerAddress = offer.address
         const nft = await thetaboard_nft.deployed();
-        const nftContractAddress = nft.address
+        const nftContractAddress = nft.address;
 
-        /* mint nft */
-        const nft1 = await nft.mint(seller1);
-
-        await offer.createNewOffer(nftContractAddress, 2, {from: offerer, value: offerPrice});
+        await offer.createNewOffer(nftContractAddress, 1, {from: offerer, value: offerPrice});
         const currentOffers = await offer.fetchOffers();
         await offer.cancelOffer(3, {from: offerer});
         const currentOffersAfterReject = await offer.fetchOffers();
-        assert.equal(itemsBought[0].itemId, 3, "Third item should be considered sold");
+        assert.equal(currentOffers.length - 1, currentOffersAfterReject.length, "Should have one less item in offers");
 
     });
 
@@ -149,16 +147,27 @@ contract("thetaboard offer NFT", async accounts => {
         const nft = await thetaboard_nft.deployed();
         const nftContractAddress = nft.address
 
-        /* mint nft */
-        const nft1 = await nft.mint(seller1);
-
         await offer.createNewOffer(nftContractAddress, 2, {from: offerer, value: offerPrice});
         const currentOffers = await offer.fetchOffers();
-        await offer.cancelOffer(3, {from: offerer});
+        await offer.denyOffer(4, {from: seller2});
         const currentOffersAfterReject = await offer.fetchOffers();
-        assert.equal(itemsBought[0].itemId, 3, "Third item should be considered sold");
-        assert.equal(itemsBought[0].buyer, seller1, "Seller is the same as Buyer");
+        assert.equal(currentOffers.length - 1, currentOffersAfterReject.length, "Should have one less item in offers");
+    });
+
+    it("Should change offer", async function () {
+        /* get contracts */
+        const offer = await thetaboard_offer.deployed()
+        const offerAddress = offer.address
+        const nft = await thetaboard_nft.deployed();
+        const nftContractAddress = nft.address
+
+        await offer.createNewOffer(nftContractAddress, 2, {from: offerer, value: offerPrice});
+        const newPrice = Number(offerPrice) + Number(toWei("0.01"));
+        await offer.changeOffer(3, {from: offerer, value: newPrice});
+        const offerUpdated = await offer.getByItemId(3);
+        assert.equal(offerUpdated.price, newPrice, "Price should have changed");
     });
 
 
 })
+
