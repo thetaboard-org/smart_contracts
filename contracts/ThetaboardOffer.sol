@@ -35,8 +35,10 @@ contract ThetaboardOffer is ReentrancyGuard {
 
     //    mapping that keeps all items ever placed on the marketplace
     mapping(uint256 => OfferItem) private idToOfferItem;
-    // mapping to get an item id from "nftcontract:tokenId"
+    // mapping to get an item id from "nftcontract:tokenId:address"
     mapping(string => uint256) private contractTokenAddressToId;
+    // mapping to get all item ids from "nftcontract:tokenId"
+    mapping(string => uint256[]) private contractTokenToIds;
 
     // Event called when a new Item is created
     event OfferCreated(
@@ -99,6 +101,7 @@ contract ThetaboardOffer is ReentrancyGuard {
         string memory contractToken = string(abi.encodePacked(nftContract, tokenId, msg.sender));
         require(contractTokenAddressToId[contractToken] < 1, string(abi.encodePacked(contractTokenAddressToId[contractToken])));
 
+
         _itemIds.increment();
         uint256 itemId = _itemIds.current();
 
@@ -111,7 +114,10 @@ contract ThetaboardOffer is ReentrancyGuard {
             msg.value,
             false
         );
+        string memory contractTokenArr = string(abi.encodePacked(nftContract, tokenId));
+
         contractTokenAddressToId[contractToken] = itemId;
+        contractTokenToIds[contractTokenArr].push(itemId);
 
         emit OfferCreated(
             itemId,
@@ -133,7 +139,7 @@ contract ThetaboardOffer is ReentrancyGuard {
         require(offerer == msg.sender, "You must be offerer to change the offer");
 
 
-        idToOfferItem[itemId].price =  msg.value;
+        idToOfferItem[itemId].price = msg.value;
         offerer.transfer(price);
 
         emit OfferCreated(
@@ -279,8 +285,15 @@ contract ThetaboardOffer is ReentrancyGuard {
     }
 
     function fetchOffersByRange(uint start, uint end) public view returns (OfferItem[] memory) {
-        uint256 itemCount = end - start;
+        uint256 itemCount = 0;
         uint256 currentIndex = 0;
+        uint256 totalItemCount = 0;
+
+        for (uint256 i = 0; i < totalItemCount; i++) {
+            if (idToOfferItem[i + 1].isSold == false) {
+                itemCount += 1;
+            }
+        }
 
         OfferItem[] memory OfferItems = new OfferItem[](itemCount);
         for (uint256 i = start; i < end; i++) {
@@ -329,13 +342,37 @@ contract ThetaboardOffer is ReentrancyGuard {
         return idToOfferItem[id];
     }
 
+    function getByNftContractsTokenId(address nftContract, uint256 tokenId) public view returns (OfferItem[] memory){
+        string memory contractToken = string(abi.encodePacked(nftContract, tokenId));
+        uint256[] memory ids = contractTokenToIds[contractToken];
+        uint256 itemCount = 0;
+
+        for (uint256 i = 0; i < ids.length; i++) {
+            uint256 id = ids[i];
+            if (idToOfferItem[id].isSold == false) {
+                itemCount += 1;
+            }
+        }
+        uint256 currentIndex = 0;
+        OfferItem[] memory OfferItems = new OfferItem[](itemCount);
+        for (uint256 i = 0; i < ids.length; i++) {
+            uint256 id = ids[i];
+            if (idToOfferItem[id].isSold == false) {
+                OfferItem storage currentItem = idToOfferItem[id];
+                OfferItems[currentIndex] = currentItem;
+                currentIndex += 1;
+            }
+        }
+        return OfferItems;
+    }
+
     fallback() payable external {}
 
     receive() external payable {}
 
     function setSalesFeeBasisPoints(uint256 fee) external {
         require(msg.sender == owner, "Only owner can set listingPrice");
-        require(fee <= 1000, "Sales Fee cant be higher than 10%");
+        require(fee <= 100, "Sales Fee cant be higher than 10%");
         salesFeeBasisPoints = fee;
     }
 }

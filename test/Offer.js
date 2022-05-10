@@ -15,10 +15,10 @@ contract("thetaboard offer NFT", async accounts => {
     const seller2 = accounts[2];
     const artist = accounts[3];
     const offerer = accounts[4];
+    const offerer2 = accounts[5];
     const offerPrice = toWei("0.01");
     const artistRoyalties = 250;
-    let nftTokenId1;
-    let nftTokentId2;
+
 
     it("Should reject free offer", async () => {
         /* get contracts */
@@ -43,23 +43,26 @@ contract("thetaboard offer NFT", async accounts => {
         const nftContractAddress = nft.address
 
         /* mint nft */
-        const nft1 = await nft.mint(seller1);
-        const nft2 = await nft.mint(seller2);
-        const nft3 = await nft.mint(seller2);
+        await nft.mint(seller1);
+        await nft.mint(seller2);
+        await nft.mint(seller2);
 
-        /* Make an offer */
+        /* Make offers */
         await offer.createNewOffer(nftContractAddress, 0, {from: offerer, value: offerPrice});
         await offer.createNewOffer(nftContractAddress, 1, {from: offerer, value: offerPrice});
-
+        await offer.createNewOffer(nftContractAddress, 1, {from: offerer2, value: offerPrice});
 
         // get items
         const items = await offer.fetchOffers();
-        assert.equal(items.length, 2, "Two offers should exists");
+        assert.equal(items.length, 3, "Two offers should exists");
         assert.equal(items["0"].price, offerPrice, "Price should be the same as offer price");
 
         // check it can get sell from nftContract + tokenId
         const item = await offer.getByNftContractTokenIdAddress(nftContractAddress, 1, offerer);
         assert.equal(item.itemId, 2, "Should get item from 'getByNftContractTokenIdAddress'");
+
+        const offersForNft = await offer.getByNftContractsTokenId(nftContractAddress, 1);
+        assert.equal(offersForNft.length, 2, "Should get 2 offers for address, token id");
 
         const seller1Items = await offer.fetchOffersForAddress(offerer);
         assert.equal(seller1Items.length, 2, "Two item should be offered by offerer")
@@ -127,14 +130,13 @@ contract("thetaboard offer NFT", async accounts => {
 
     it("Should cancel offer", async function () {
         /* get contracts */
-        const offer = await thetaboard_offer.deployed()
-        const offerAddress = offer.address
+        const offer = await thetaboard_offer.deployed();
         const nft = await thetaboard_nft.deployed();
         const nftContractAddress = nft.address;
 
         await offer.createNewOffer(nftContractAddress, 1, {from: offerer, value: offerPrice});
         const currentOffers = await offer.fetchOffers();
-        await offer.cancelOffer(3, {from: offerer});
+        await offer.cancelOffer(4, {from: offerer});
         const currentOffersAfterReject = await offer.fetchOffers();
         assert.equal(currentOffers.length - 1, currentOffersAfterReject.length, "Should have one less item in offers");
 
@@ -149,7 +151,7 @@ contract("thetaboard offer NFT", async accounts => {
 
         await offer.createNewOffer(nftContractAddress, 2, {from: offerer, value: offerPrice});
         const currentOffers = await offer.fetchOffers();
-        await offer.denyOffer(4, {from: seller2});
+        await offer.denyOffer(5, {from: seller2});
         const currentOffersAfterReject = await offer.fetchOffers();
         assert.equal(currentOffers.length - 1, currentOffersAfterReject.length, "Should have one less item in offers");
     });
