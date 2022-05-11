@@ -159,14 +159,9 @@ contract("thetaboard offer NFT", async accounts => {
     it("Should change offer", async function () {
         /* get contracts */
         const offer = await thetaboard_offer.deployed()
-        const offerAddress = offer.address
-        const nft = await thetaboard_nft.deployed();
-        const nftContractAddress = nft.address
-
-        await offer.createNewOffer(nftContractAddress, 2, {from: offerer, value: offerPrice});
         const newPrice = Number(offerPrice) + Number(toWei("0.01"));
-        await offer.changeOffer(3, {from: offerer, value: newPrice});
-        const offerUpdated = await offer.getByItemId(3);
+        await offer.changeOffer(2, {from: offerer, value: newPrice});
+        const offerUpdated = await offer.getByItemId(2);
         assert.equal(offerUpdated.price, newPrice, "Price should have changed");
     });
 
