@@ -160,9 +160,8 @@ contract ThetaboardOffer is ReentrancyGuard {
         uint256 price = idToOfferItem[itemId].price;
         uint256 tokenId = idToOfferItem[itemId].tokenId;
         address nftContract = idToOfferItem[itemId].nftContract;
-        IERC721 nft721 = IERC721(nftContract);
         address payable offerer = idToOfferItem[itemId].offerer;
-        require(nft721.ownerOf(tokenId) == msg.sender, "You must be token owner to accept the offer");
+        require(IERC721(nftContract).ownerOf(tokenId) == msg.sender, "You must be token owner to accept the offer");
 
         // transfer token
         IERC721(nftContract).transferFrom(address(msg.sender), offerer, tokenId);
